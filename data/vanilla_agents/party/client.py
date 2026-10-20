@@ -24,6 +24,24 @@ class PartyError(Exception):
     pass
 
 
+@__import__("functools").lru_cache(maxsize=1)
+def default_name():
+    """A name to start from in the Host / Join boxes: your git user name, else your sign-in name (you can change it)."""
+    import getpass
+    import subprocess
+    try:
+        r = subprocess.run(["git", "config", "--global", "user.name"], capture_output=True, text=True, timeout=3)
+        n = (r.stdout or "").strip()
+        if n:
+            return n.split()[0][:32]
+    except (OSError, subprocess.SubprocessError):
+        pass
+    try:
+        return getpass.getuser()[:32]
+    except Exception:          # noqa: BLE001 - no user name on this system
+        return ""
+
+
 def parse_invite(link, with_host=False):
     """'http://host:port/party?t=TOKEN[&h=HOST]' -> (base url, token) or, with_host, (base url, token, host token or '')."""
     u = urlsplit((link or "").strip())
@@ -43,6 +61,7 @@ class PartyClient:
         self.cache_file = os.path.join(work_dir, "party-state.json")
         self.m = self._load(self.member_file) or {}
         self.state, self.error, self.hub_srv, self.party = None, "", None, None
+        self.pending = None                        # an invite a friend clicked in their browser (GET /join): the window asks to confirm
         self.chat, self.chat_last = [], 0          # community chat (humans only): memory and the window, never a file
         self.version = 0                           # goes up whenever what view() shows changes (the window's live updates follow it)
         self._sig = ""
@@ -115,12 +134,41 @@ class PartyClient:
         self._save(self.member_file, self.m)
         return self.m["invite"]
 
+    def invites(self):
+        """The links to share, one per way in: the same Wi-Fi first, then Tailscale (friends over the internet without opening a port)."""
+        inv = self.m.get("invite", "")
+        if not inv:
+            return []
+        out = [{"kind": "lan", "url": inv}]
+        if self.m.get("host_bind") != "127.0.0.1":
+            u = urlsplit(inv)
+            port = u.port or 8940
+            for ip in hub.vpn_addresses():
+                out.append({"kind": "vpn", "url": "http://%s:%d%s?%s" % (ip, port, u.path, u.query)})
+        return out
+
+    def offer(self, invite_link):
+        """A friend's invite link arrived from their browser (the hub's Join button): remember it for the window to ask about.
+        Only a valid link is kept; nothing is joined here."""
+        parse_invite(invite_link)
+        if self.joined:
+            raise PartyError("you are already in a party: leave it first")
+        name = ""
+        try:
+            name = (self._call("/party", base=parse_invite(invite_link)[0], key="") or {}).get("party", "")
+        except PartyError:
+            pass
+        self.pending = {"invite": invite_link.strip(), "party": str(name)[:60], "at": time.time()}
+        self.version += 1
+        return self.pending
+
     def join(self, invite_link, my_name):
         base, token, host_token = parse_invite(invite_link, with_host=True)
         r = self._call("/party/join", {"invite": token, "name": my_name, "host": host_token}, base=base, key="")
         if host_token:                          # never keep or show the host secret: the link we share is the plain invite
             invite_link = "%s/party?t=%s" % (base, token)
         self.m = {"url": base, "key": r["key"], "member": r["member"], "party": r["party"], "invite": invite_link, "quests": {}}
+        self.pending = None
         self.chat, self.chat_last = [], 0
         self._save(self.member_file, self.m)
         self.error = ""
@@ -232,7 +280,9 @@ class PartyClient:
         """What the window shows: joined?, the party state, our invite link (host), last error."""
         st = self.state or {}
         is_host = bool(st.get("me")) and st.get("me") == st.get("host")
+        pend = self.pending if (self.pending and not self.joined and time.time() - self.pending["at"] < 600) else None
         return {"joined": self.joined, "hosting": bool(self.hub_srv), "host": is_host, "local": self.m.get("host_bind") == "127.0.0.1",
                 "invite": self.m.get("invite", "") if is_host else "", "invite_expires": st.get("invite_expires"),
+                "invites": self.invites() if is_host else [], "pending": pend, "default_name": default_name(),
                 "state": self.state, "error": self.error, "member": self.m.get("member", ""), "quests": self.m.get("quests", {}),
                 "chat": list(self.chat) if self.joined else []}

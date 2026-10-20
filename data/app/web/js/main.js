@@ -53,7 +53,11 @@ async function boot() {
   ctx.tip = initTooltips(cfg);
   ctx.sound = await initSound(cfg);
   const updaters = [];
+  loading.texts({ slow: ctx.t('load.slow') });
+  const names = Object.keys(BUILDERS);
   for (const [name, builder] of Object.entries(BUILDERS)) {
+    const k = names.indexOf(name);
+    if (k % 5 === 4) { loading.step('', 0.08 + 0.04 * k / names.length, 0.12); await new Promise((r) => requestAnimationFrame(r)); }   // let the bar move while the windows are built
     ctx.panels[name] = createPanel(ctx, name);
     const r = builder(ctx, ctx.panels[name]);
     ctx.panels[name].api = r;
@@ -96,7 +100,24 @@ async function boot() {
   reportErrors(ctx);
   if ((cfg.rebake || []).length) setTimeout(() => import('./toast.js').then((t) => t.showToast(ctx.t('ws.rebake', { text: cfg.rebake.join(' ') }), 'red', 9000)), 2500);   // V-029: short banner; Help (F1) shows the command
   loadAddons(ctx);
+  loading.onDone(() => welcome(ctx));
   if (mode !== 'inn') loading.done();      // the inn closes the loading screen itself once everything is built
+}
+
+// V-053: the first time the window opens, a short card says what this is and the three things to know; never again after "Let's go"
+function welcome(ctx) {
+  try { if (localStorage.getItem('va.welcomed')) return; } catch (e) { return; }      // storage off: no card rather than one every start
+  const card = document.createElement('div'); card.className = 'welcome'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-label', ctx.t('welcome.title'));
+  const h = document.createElement('h2'); h.textContent = ctx.t('welcome.title');
+  const ul = document.createElement('ul');
+  for (const k of ['welcome.helpers', 'welcome.move', 'welcome.quests', 'welcome.party']) { const li = document.createElement('li'); li.textContent = ctx.t(k); ul.append(li); }
+  const row = document.createElement('div'); row.className = 'welcome-row';
+  const close = () => { try { localStorage.setItem('va.welcomed', '1'); } catch (e) { /* storage off */ } card.remove(); };
+  const guide = document.createElement('button'); guide.type = 'button'; guide.className = 'btn btn-grey'; guide.textContent = ctx.t('welcome.guide');
+  guide.addEventListener('click', () => { close(); const g = ctx.panels.guide; if (g && !g.isOpen()) g.toggle(); });
+  const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn btn-green'; ok.textContent = ctx.t('welcome.ok');
+  ok.addEventListener('click', close);
+  row.append(guide, ok); card.append(h, ul, row); document.body.append(card); ok.focus();
 }
 
 // V-026: helpers that need you show in the window title (taskbar) and, when the window is in the background, as a desktop notification

@@ -9,7 +9,7 @@ from pathlib import Path
 EVENT_KEYS = {"sound": str, "volume": (int, float), "enabled": bool}
 MASTER_KEYS = {"volume": (int, float), "mute": bool}
 HELPER_MODES = ("off", "ask", "on")   # helpers switch: off = never launch, ask = one click per launch, on = allowed
-EXTRA = ("phone", "notify", "integrations", "chat", "addons")     # V-040 phone access, V-041 notifications, V-044 integrations, V-050 chat replies, V-051 which addons load: groups owned by their own modules (validated there), kept as they are here
+EXTRA = ("phone", "notify", "integrations", "chat", "addons", "remote")     # V-040 phone access, V-041 notifications, V-044 integrations, V-050 chat replies, V-051 which addons load, V-054 browser access: groups owned by their own modules (validated there), kept as they are here
 
 
 def settings_path(cfg_app, env=os.environ):

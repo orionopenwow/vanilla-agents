@@ -14,6 +14,12 @@ Vanilla Agents runs on your PC. Nothing leaves it except what you start yourself
   moment they joined; the host can delete a line for everyone. Do not write passwords or secrets there: it is plain HTTP like the rest of the party.
 - **Phone access** (only if you switch it on in Options > Phone): the window also answers your home network, and only to a device that has
   the key link; it sends that device the same picture as the window (helpers, quests, chat lines). Off again with the same switch.
+- **Browser access** (only if you switch it on in Options > Browser access, V-054): this PC keeps one outbound connection to the
+  Open Vanilla relay (agents.openvanilla.app). Browsers you pair get the same picture as the phone page (helpers, quests, chat lines),
+  sealed end to end with keys only this PC and that browser hold: the relay sees a pair id, a device id, sizes and times, never the
+  content. The relay stores only your pair id with a hash of this PC's token. Your keys and paired browsers are in `remote.json` next to
+  your settings file. **Claude connectors** you make there are different: Claude's calls (quest titles, progress lines, requests) are
+  plain at the relay while it passes them on, kept in its memory only for that call. See docs/BROWSER.md.
 - **Notifications** (only the ones you switch on in Options > Notifications): short sentences such as "Varn needs you: permission for
   Bash" or "Quest done: Fix the login" go to the Discord / Slack / ntfy / webhook address you entered. Never code, file contents, paths,
   commands or keys. The addresses are kept in your settings file in `%USERPROFILE%\.vanilla-agents`. See docs/INTEGRATIONS.md.

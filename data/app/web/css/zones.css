@@ -34,7 +34,7 @@
 .zn-remember { display: flex; align-items: center; gap: 6px; margin: 12px 0 4px; color: #e6dcc0; }
 .zn-empty { padding: 20px; }
 .fly-zones { align-self: center; margin: 6px auto 2px; }
-.loading-zone { position: absolute; left: 0; right: 0; top: 7%; text-align: center; pointer-events: none; }
+.loading-zone { position: absolute; left: 0; right: 0; bottom: 178px; text-align: center; pointer-events: none; }
 .loading-zone-name { font-size: 40px; color: var(--gold); text-shadow: 0 0 8px #000, 2px 2px 0 #000, -1px -1px 0 #000; }
 .loading-zone-inn { margin-top: 4px; font-size: 18px; color: #f0e6c8; text-shadow: 1px 1px 3px #000, 0 0 6px #000; }
 .zn-tour { margin: 4px 0 8px; }

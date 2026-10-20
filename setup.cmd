@@ -21,4 +21,6 @@ if "%~1"=="" (
   exit /b 1
 )
 python scripts\setup.py --data-dir "%~1" --hooks --mcp --shortcut
+rem Browser access (V-054) seals with the one package Vanilla Agents uses besides Python itself: cryptography.
+python -m pip install --user --quiet --disable-pip-version-check "cryptography>=42" || echo Browser access will need the cryptography package: python -m pip install --user cryptography
 pause

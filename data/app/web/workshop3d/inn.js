@@ -508,7 +508,7 @@ export function initInn(ctx) {
     for (const a of now) {
       let v = villagers.get(a.id);
       if (!v) {
-        v = { id: a.id, p: null, stage: 'loading', timer: 0, path: null }; villagers.set(a.id, v);
+        v = { id: a.id, p: null, stage: 'loading', timer: 0, path: null, instant: !ready }; villagers.set(a.id, v);
         makePerson(a.id).then((p) => {
           v.p = p; scene.add(p.g); const spawn = doorSpot();
           p.g.position.set(spawn.x, spawn.y, spawn.z); play(p, 'stand'); v.stage = 'wait'; v.timer = 0;
@@ -517,7 +517,9 @@ export function initInn(ctx) {
     }
     for (const [id, v] of villagers) if (!ids.has(id)) { if (v.mark) scene.remove(v.mark); putSack(v); leaveSeat(v); if (v.station || v.st) fromStation(v); if (v.p) scene.remove(v.p.g); villagers.delete(id); }
   }
-  const doorSpot = () => { const i = nearestFree(hero.x + (R() - 0.5) * 6, hero.z + (R() - 0.5) * 6, hero.y, 30); const [x, z] = i >= 0 ? cellXZ(i) : [hero.x, hero.z]; return { x, z, y: i >= 0 ? nav.y[i] : hero.y }; };   // ponytail: real door not located yet
+  const doorSpot = () => {        // a few metres from you, never on top of you (ponytail: the real door is not located yet)
+    for (let k = 0; k < 12; k++) { const a = R() * 6.283, d = 2.5 + R() * 3.5, i = nearestFree(hero.x + Math.sin(a) * d, hero.z + Math.cos(a) * d, hero.y, 4); if (i >= 0) { const [x, z] = cellXZ(i); if (Math.hypot(x - hero.x, z - hero.z) > 1.8) return { x, z, y: nav.y[i] }; } }
+    const i = nearestFree(hero.x + (R() - 0.5) * 6, hero.z + (R() - 0.5) * 6, hero.y, 30); const [x, z] = i >= 0 ? cellXZ(i) : [hero.x, hero.z]; return { x, z, y: i >= 0 ? nav.y[i] : hero.y }; };   // ponytail: real door not located yet
 
   // ---- errands: what a working helper does tells it where to go for a moment (reading -> a bookshelf, committing -> the crates,
   // thinking a long while -> the fire), then it walks back to its desk. Waiting for you (quest handed in) -> it stands at the quest board.
@@ -778,6 +780,9 @@ export function initInn(ctx) {
     }
     if (v.sackT > 0 && (v.sackT -= dt) <= 0) putSack(v, 14);       // at the crates: the sack goes down while it bends over
     if (v.stage === 'work') { v.typing.undo && v.typing.undo(); p.mixer.update(dt); v.typing.apply(t, v.st ? v.st.amount : 0); return; }
+    if (v.instant && (v.stage === 'go' || v.stage === 'togo') && v.path && v.path.length) {      // here before the inn opened: already in place, no walk from your feet
+      const e = v.path[v.path.length - 1]; p.g.position.set(e.x, e.y, e.z); v.path = []; v.waitT = 0; v.instant = false;
+    } else if (v.instant && (v.stage === 'work' || v.stage === 'stay')) v.instant = false;
     if ((v.stage === 'go' || v.stage === 'togo') && v.waitT > 0) { v.waitT -= dt; p.mixer.update(dt); return; }   // finish standing up / closing the book first
     if (v.stage === 'go' || v.stage === 'togo') {
       p.after = null; play(p, 'walk');
@@ -1028,7 +1033,13 @@ export function initInn(ctx) {
     }
     if (!best.length) return -1;
     let mx = 0, mz = 0; for (const n of best) { const [x, z] = cellXZ(n); mx += x; mz += z; } mx /= best.length; mz /= best.length;
-    let pick = best[0], bd = Infinity; for (const n of best) { const [x, z] = cellXZ(n), d = Math.hypot(x - mx, z - mz); if (d < bd) { bd = d; pick = n; } }
+    // the roomiest spot near the middle: most free ground on the same level within ~1.5 m (not a stair, a corner or behind a barrel)
+    const inBest = new Set(best); let pick = best[0], bs = -Infinity;
+    for (const n of best) {
+      const [x, z] = cellXZ(n); let room = 0;
+      for (let dz = -3; dz <= 3; dz++) for (let dx = -3; dx <= 3; dx++) { const m = nodeAt(x + dx * INN.cell, z + dz * INN.cell, nav.y[n], 0.25); if (m >= 0 && inBest.has(m)) room++; }
+      const sc = room - Math.hypot(x - mx, z - mz) * 0.6; if (sc > bs) { bs = sc; pick = n; }
+    }
     return pick;
   }
   // your own office GLB (docs/OFFICE.md): empties named desk_* (origin at the wall, +z into the room) and seat_* (+z = facing), meshes named fire* / board*
@@ -1109,13 +1120,13 @@ export function initInn(ctx) {
       if (box) { const z = document.createElement('div'); z.className = 'loading-zone'; const n = document.createElement('div'); n.className = 'loading-zone-name'; n.textContent = zone.name; const i = document.createElement('div'); i.className = 'loading-zone-inn'; i.textContent = house.label; z.append(n, i); box.append(z); }
     }
     const hasPhoto = !!(place.buildings.find((b) => b.key === house.key) || {}).photo;
-    loading.step('Opening the ' + house.label, 0.12);
+    loading.step('Opening the ' + house.label, 0.12, 0.21);
     const [gltf, spots] = await Promise.all([loadModel(house.glb), house.spots ? fetch('/assets/' + house.spots).then((r) => r.json()) : Promise.resolve([])]);
     inn = gltf.scene; inn.scale.setScalar(house.custom ? 1 : K); scene.add(inn); inn.traverse((o) => { o.frustumCulled = true; });   // your own GLB is in metres already
     inn.updateMatrixWorld(true);
     inn.traverse((o) => { if (o.isMesh && /^col_/.test(o.name)) { o.visible = false; colMeshes.push(o); if (o.parent) o.parent.userData.hasCol = true; } });
     walls = makeCollider(house.custom ? inn : inn.children[0]); solid = makeCollider([house.custom ? inn : inn.children[0], ...colMeshes]);
-    loading.step('Finding the way around', 0.22);
+    loading.step('Finding the way around', 0.22, 0.62);
     await buildNav(spots, (f) => loading.step('Finding the way around', 0.22 + 0.4 * f));
     const start = house.start ? nearestFree(house.start[0], house.start[1], 0) : largestGround();
     keepConnected(start); findSpots(spots); if (house.custom) { customSpots(inn); findScreens(inn); }
@@ -1124,7 +1135,7 @@ export function initInn(ctx) {
     if (!deskSpots.length) findDesks(gy0 - 0.3, gy0 + 1.1);
     bindScreens();
     if (!house.custom) batchFurniture(inn);
-    loading.step('Heroes are on their way', 0.65);
+    loading.step('Heroes are on their way', 0.65, 0.8);
     // only the heroes in use now (you + the helpers already here); others load when they walk in
     for (let k = 0; k < 30 && !(state.agents || []).length; k++) await new Promise((r) => setTimeout(r, 50));
     const files = [...new Set(await Promise.all(['hero', ...agentsNow().map((a) => a.id)].map(async (id) => (await workerFile(id)).file)))];
@@ -1132,12 +1143,16 @@ export function initInn(ctx) {
     await Promise.all([staticModel(c.models.desk), staticModel(c.models.chair)]);
     const hp = await makePerson('hero'); hero.p = hp; scene.add(hp.g); play(hp, 'stand');
     const st = start; const [sx, sz] = st >= 0 ? cellXZ(st) : [0, 0]; hero.x = sx; hero.z = sz; hero.y = hero.gnd = st >= 0 ? nav.y[st] : 0; hp.g.position.set(sx, hero.y, sz);
+    { // first look: toward the tables on your floor (where the helpers sit), else toward the open middle of the room
+      const near = seats.filter((q) => q.table && Math.abs(q.y - hero.y) < 1.5), list = near.length ? near : seats;
+      if (list.length) { let cx = 0, cz = 0; for (const q of list) { cx += q.x; cz += q.z; } cx /= list.length; cz /= list.length; if (Math.hypot(cx - sx, cz - sz) > 0.5) { hero.yaw = Math.atan2(cx - sx, cz - sz); hero.body = hero.yaw; } }
+    }
     await placeJuke().catch((e) => console.warn('inn jukebox', e));
     await placeBoard().catch((e) => console.warn('inn quest board', e));
     loadProp(TUNE.bag.model, TUNE.bag.h).then((g) => { sackProto = g; }).catch(() => {});      // V-043: the sack helpers carry to the crates (none baked: just the loot emote)
-    loading.step('Greeting the helpers', 0.85);
+    loading.step('Greeting the helpers', 0.85, 0.93); { const n = agentsNow().length; if (n) loading.note(ctx.t('load.helpers', { count: n })); }
     sync(agentsNow()); for (let k = 0; k < 100 && [...villagers.values()].some((v) => v.stage === 'loading'); k++) await new Promise((r) => setTimeout(r, 50));
-    loading.step('Lighting the candles', 0.94);
+    loading.step('Lighting the candles', 0.94, 0.99);
     placeCamera(0); renderer.compile(scene, camera); renderer.render(scene, camera);      // shaders and textures go to the GPU now, not mid-game
     // nobody here yet: say how to bring helpers in (gone as soon as one walks in)
     const hint = document.createElement('div'); hint.className = 'empty-hint'; hint.textContent = ctx.t('ws.empty_inn'); hint.hidden = true; document.body.append(hint);

@@ -783,6 +783,19 @@
     "title": "Phone link",
     "body": "The address of the phone page with your secret key at the end. Do not post it anywhere."
   },
+  "browserlink_toggle": {
+    "title": "Browser access",
+    "body": "On: this PC keeps one connection open to the Open Vanilla relay, so the browsers you pair can see the inn from anywhere. Nothing on this PC listens for the internet.",
+    "use": "Switch it off and every paired browser goes dark at once."
+  },
+  "browserlink_qr": {
+    "title": "Pairing link",
+    "body": "Open it in the browser you want to pair. It works once, for a few minutes, and only carries a one-time secret in the part of the address that browsers never send to servers."
+  },
+  "browserlink_claude": {
+    "title": "Claude connector address",
+    "body": "Paste it into Claude as a custom connector. That Claude can then add quests and report progress to your inn, but it can never approve, verify or pause."
+  },
   "notifyhub_discord": {
     "title": "Discord",
     "body": "Posts the message in a Discord channel through a webhook link you make in the channel's settings."

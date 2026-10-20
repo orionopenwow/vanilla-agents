@@ -19,7 +19,7 @@ from ..events import transcripts
 from ..events.feed import Feed
 from ..storage import layout
 from ..onboard import setup as onboarding
-from . import addons, addons_api, auras, background, chatreplies, integrations_api, places_api, checks_api, contests, detect, idea_api, launch, notify, phone, resurrect, runs, settings, social, tiers, worker_level, zones_api
+from . import addons, addons_api, auras, background, chatreplies, integrations_api, places_api, checks_api, contests, detect, idea_api, launch, notify, phone, remote_api, resurrect, runs, settings, social, tiers, worker_level, zones_api
 from .verify_job import Refused, VerifyJob, ideas_root
 from .check_app import check_app
 from .config import CONFIG_DIR, WEB_DIR, load_all
@@ -65,6 +65,7 @@ class Ctx:
         self.zone_cache = zones_api.ZoneCache()
         self.integ = integrations_api.make_hub(self)       # V-044: imported bounties and the CI line (threads only via start_integrations)
         self.chat = chatreplies.make(self, os.environ)      # V-050: commands from Discord / Slack / ntfy (thread only via start_chat)
+        self.remote = remote_api.RemoteCtl(self, os.environ)       # V-054: browser access (the bridge thread only via remote.start, once the port is known)
         self._watch_stop = None
         self.watching = watch       # False for the phone script (scripts/decide.py): no transcript watcher, nothing added to the feed but the decision
         if watch:
@@ -321,12 +322,26 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"buildings": social.office_buildings(ctx.assets_dir)})
         if path == "/api/party":
             return self._send(200, ctx.party.view())
+        if path == "/join":              # a friend's invite page sent us here (its Join button): the window asks before anything is joined
+            from html import escape
+            from ..party.client import PartyError
+            try:
+                ctx.party.offer((q.get("invite") or [""])[0])
+                head, line = "Back to Vanilla Agents", "Your Vanilla Agents window is asking whether to join. You can close this tab."
+            except PartyError as e:
+                head, line = "That didn't work", str(e)
+            page = ("<!doctype html><meta charset=utf-8><title>Vanilla Agents</title><body style='margin:0;min-height:100vh;display:grid;"
+                    "place-items:center;background:#0c0a08;color:#e8dcc0;font:16px Georgia,serif'><div style='max-width:420px;margin:16px'>"
+                    "<h1 style='color:#ffd100;font-size:22px'>%s</h1><p>%s</p></div>") % (escape(head), escape(line))
+            return self._send(200, page, "text/html; charset=utf-8", {"Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'"})
         if path == "/api/places":        # V-042: zones, buildings by zone, inn pictures (Zones window)
             return self._send(200, places_api.places(ctx.assets_dir))
         if path == "/api/phone/strings":
             return self._send(200, phone_strings(ctx.cfg))
         if path == "/api/phone":         # V-040: is phone access on, and its address (the window adds the key itself)
             return self._send(200, ctx.phone_status())
+        if path == "/api/remote":        # V-054: browser access status, paired browsers, connectors (no keys, tokens or links)
+            return self._send(200, ctx.remote.status())
         if path == "/api/notify":        # V-041: notification settings (from your settings file)
             return self._send(200, notify.view(notify.load(ctx.settings_file)))
         if path in chatreplies.GET_CALLS:        # V-050: chat replies settings WITHOUT secrets, and status lines
@@ -365,7 +380,7 @@ class Handler(BaseHTTPRequestHandler):
         ctype = self.headers.get("Content-Type", "").split(";")[0].strip().lower()      # the main type exactly, not 'text/plain; x=application/json'
         allowed = PHONE_CALLS if getattr(self.server, "phone_ip", None) else ("/api/project", "/api/settings", "/api/verify", "/api/pause", "/api/approve", "/api/quest", "/api/onboard",
                    "/api/idea/draft", "/api/idea/approve", "/api/whisper", "/api/hearth", "/api/quest_new", "/api/party", "/api/log", "/api/diagnostics",
-                   "/api/resurrect", "/api/phone", "/api/notify", "/api/notify/test", "/api/inn_photo", "/api/contest") + integrations_api.POST_CALLS + chatreplies.POST_CALLS + addons_api.POST_CALLS
+                   "/api/resurrect", "/api/phone", "/api/remote", "/api/notify", "/api/notify/test", "/api/inn_photo", "/api/contest") + integrations_api.POST_CALLS + chatreplies.POST_CALLS + addons_api.POST_CALLS
         if call not in allowed or ctype != "application/json":
             return self._send(404, {"error": "no such call"})
         if not self._key_ok():      # D-381: every state-changing call carries the per-launch key
@@ -388,7 +403,7 @@ class Handler(BaseHTTPRequestHandler):
             if call == "/api/approve":
                 if not isinstance(body.get("task"), str):
                     raise ValueError("task must be text")
-                ctx.state.approve(body["task"], who="you (phone)" if getattr(self.server, "phone_ip", None) else "you")      # D-387: a never-quest is never approved AUTOMATICALLY, but the owner's own click is allowed
+                ctx.state.approve(body["task"], who="you (phone)" if getattr(self.server, "phone_ip", None) else "you (browser)" if self.headers.get("X-Vanilla-Via") == "browser" else "you")      # D-387: a never-quest is never approved AUTOMATICALLY, but the owner's own click is allowed
                 return self._send(200, ctx.snap())
             if call == "/api/quest":
                 if not isinstance(body.get("task"), str) or body.get("action") not in ("explain", "change", "veto"):
@@ -449,6 +464,8 @@ class Handler(BaseHTTPRequestHandler):
                 phone.set_enabled(ctx.settings_file, body.get("enabled"))
                 ctx.phone_start() if body["enabled"] else ctx.phone_stop()
                 return self._send(200, ctx.phone_status())
+            if call == "/api/remote":        # V-054: browser access on/off, pairing link, remove a browser, Claude connector addresses
+                return self._send(200, ctx.remote.action(body))
             if call == "/api/notify":        # V-041: save notification settings
                 notify.save(ctx.settings_file, body.get("channels"))
                 return self._send(200, notify.view(notify.load(ctx.settings_file)))
@@ -479,6 +496,9 @@ class Handler(BaseHTTPRequestHandler):
                         ctx.party.join(str(body.get("invite") or ""), str(body.get("name") or "Adventurer"))
                     elif a == "leave":
                         ctx.party.leave()
+                    elif a == "dismiss":            # "Not now" on an invite a friend's page handed over
+                        ctx.party.pending = None
+                        ctx.party.version += 1
                     elif a in ("propose", "remove", "agree", "unlock", "take", "kick", "renew"):
                         ctx.party.act(a, {k: body[k] for k in ("title", "why", "size", "item", "version", "member", "hours") if k in body})
                     elif a == "say":                # V-036 community chat, people only: never written to the feed or any file Claude reads
@@ -646,6 +666,9 @@ def main(argv=None):
     if phone.enabled(ctx.settings_file):       # V-040: Phone access was left on: open the home-network listener again
         ctx.phone_start()
         print("Phone access is on: " + (ctx.phone_status()["url"] or ctx.phone_error))
+    if remote_api.enabled(ctx.settings_file):      # V-054: Browser access was left on: connect to the relay again
+        ctx.remote.start()
+        print("Browser access is on (relay %s)." % ctx.remote.relay + (" " + ctx.remote.error if ctx.remote.error else ""))
     url = "http://127.0.0.1:%d/" % srv.server_address[1]
     print("vanilla-agents is running at " + url)
     if a.show_key:
@@ -664,6 +687,7 @@ def main(argv=None):
     finally:
         ctx.stop.set()
         ctx.phone_stop()
+        ctx.remote.stop()
         if ctx._watch_stop:
             ctx._watch_stop.set()
         srv.server_close()

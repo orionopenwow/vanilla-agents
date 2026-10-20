@@ -1,7 +1,7 @@
 {
   "task_created": "A new quest appeared: {title}.",
   "task_ready": "The quest \"{title}\" is ready to be handed in for checking.",
-  "agent_started": "{agent} sat down at a desk and got to work.",
+  "agent_started": "{agent} walked into the inn.",
   "agent_working": "{agent} is busy, {activity}.",
   "agent_idle": "{agent} is waiting for the next job. {note}",
   "tool_use": "{agent} used {tool} {file} {command}",

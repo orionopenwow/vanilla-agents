@@ -27,7 +27,7 @@ export function build(ctx, panel) {
   function outside() {                 // not in a party: host or join
     const box = el('div', 'pt-two');
     const host = el('div', 'pt-card'), join = el('div', 'pt-card');
-    const pname = input('', t('party_name'), recall('pname', 'Raid night'), 60), hname = input('', t('your_name'), recall('name'), 32);
+    const pname = input('', t('party_name'), recall('pname', 'Raid night'), 60), hname = input('', t('your_name'), recall('name', (last && last.party && last.party.default_name) || ''), 32);
     pname.setAttribute('aria-label', t('party_name')); hname.setAttribute('aria-label', t('your_name'));
     // who can reach the hub (this PC only = 127.0.0.1, my network = every address) and how long the invite link works
     const reach = select([['local', t('reach_local')], ['network', t('reach_network')]], recall('reach', 'network'), t('reach'));
@@ -39,12 +39,23 @@ export function build(ctx, panel) {
       tip(button('btn-green', t('host'), () => { if (!hname.value.trim()) { msg = t('need_name'); return draw(last); } remember('name', hname.value.trim()); remember('pname', pname.value.trim());
         remember('reach', reach.value); remember('hours', hours.value);
         send({ action: 'host', party: pname.value.trim(), name: hname.value.trim(), port: c.options.port, network: reach.value === 'network', hours: +hours.value }); }), 'host'));
-    const link = input('', t('invite'), '', 300), jname = input('', t('your_name'), recall('name'), 32);
+    const link = input('', t('invite'), '', 300), jname = input('', t('your_name'), recall('name', (last && last.party && last.party.default_name) || ''), 32);
     link.setAttribute('aria-label', t('invite')); jname.setAttribute('aria-label', t('your_name'));
     join.append(el('div', 'gold shadow pt-h', t('join_title')), el('div', 'small grey', t('join_hint')), link, jname,
       tip(button('btn-blue', t('join'), () => { if (!link.value.trim()) { msg = t('need_link'); return draw(last); } if (!jname.value.trim()) { msg = t('need_name'); return draw(last); }
         remember('name', jname.value.trim()); send({ action: 'join', invite: link.value.trim(), name: jname.value.trim() }); }), 'join'));
     box.append(host, join);
+    const p = (last && last.party) || {};
+    if (p.pending) {                   // a friend's invite page handed its link over (GET /join): one click, nothing joined without it
+      const card = el('div', 'pt-card pt-invited'), nm = input('', t('your_name'), recall('name', p.default_name || ''), 32);
+      nm.setAttribute('aria-label', t('your_name'));
+      const yes = button('btn-green', t('join'), () => { if (!nm.value.trim()) { msg = t('need_name'); return draw(last); }
+        remember('name', nm.value.trim()); send({ action: 'join', invite: p.pending.invite, name: nm.value.trim() }); });
+      const no = button('btn-grey', t('not_now'), () => send({ action: 'dismiss' }));
+      const row = el('div', 'pt-prow'); row.append(el('span', 'small grey', t('join_as')), nm, yes, no);
+      card.append(el('div', 'gold shadow pt-h', p.pending.party ? t('invited', { name: p.pending.party }) : t('invited_unknown')), row);
+      const wrapAll = el('div'); wrapAll.append(card, box); return wrapAll;
+    }
     return box;
   }
 
@@ -56,9 +67,15 @@ export function build(ctx, panel) {
     const head = el('div', 'pt-head');
     head.append(icon(c.icons.crown, 'pt-crown'), el('div', 'gold shadow pt-name', st.party || ''));
     if (p.host && p.invite) {           // only the host shares the link, renews it and removes members (the hub checks it too)
-      const inv = input('pt-invite', '', p.invite, 300); inv.readOnly = true; inv.setAttribute('aria-label', t('invite'));
-      const cp = button('btn-grey pt-copy', t('copy'), async () => { try { await navigator.clipboard.writeText(p.invite); cp.textContent = t('copied'); } catch (e) { inv.select(); } });
-      head.append(inv, cp);
+      const links = (p.invites && p.invites.length) ? p.invites : [{ kind: 'lan', url: p.invite }];
+      const box = el('div', 'pt-links');
+      for (const l of links) {         // one row per way in: the same Wi-Fi, and Tailscale when this PC has it (friends anywhere)
+        const inv = input('pt-invite', '', l.url, 300); inv.readOnly = true; inv.setAttribute('aria-label', t('invite') + ' (' + t('link_' + l.kind) + ')');
+        const cp = button('btn-grey pt-copy', t('copy'), async () => { try { await navigator.clipboard.writeText(l.url); cp.textContent = t('copied'); } catch (e) { inv.select(); } });
+        const row = el('div', 'pt-linkrow'); row.append(el('span', 'small gold pt-linkkind', t('link_' + l.kind)), inv, cp); box.append(row);
+      }
+      box.append(el('div', 'small grey', t('share_hint')));
+      head.append(box);
     }
     head.append(button('btn-red pt-leave', t('leave'), () => send({ action: 'leave' })));
     let hostRow = null;
@@ -150,7 +167,13 @@ export function build(ctx, panel) {
     const err = msg || p.error;
     if (err) view.append(el('div', 'small red pt-err', t('error', { error: err })));
   }
+  let offered = null;
+  const update = (s) => {              // an invite handed over from the browser opens this window once, so the question is seen
+    const pend = s && s.party && s.party.pending;
+    if (pend && pend.at !== offered) { offered = pend.at; if (!panel.isOpen()) panel.toggle(); }
+    draw(s);
+  };
   const toggle = panel.toggle;
   panel.toggle = () => { toggle(); if (panel.isOpen() && last) draw(last); };
-  return { update: draw };
+  return { update };
 }

@@ -6,7 +6,11 @@ Several people, each with their own Vanilla Agents and Claude helpers, share one
    or several windows on one PC) or *My network* (friends on your Wi-Fi or VPN), and **how long the link works** (1 h, 8 h, 24 h or 3 days;
    default 24 h, `panels/party.json` `options.invite_hours`). Their PC opens a small party hub on port 8940 and shows an invite link
    (`http://<their-pc>:8940/party?t=...`). Send it to the others. Anyone with the link can join until it runs out, so share it only with them.
-2. **Everyone else joins:** Party window > paste the link > Join. You see each other in "In the party", and each other's helpers walk around in your inn.
+   The host sees one link per way in: **Same Wi-Fi**, and **Tailscale** when this PC is on Tailscale (friends anywhere, no port to open).
+2. **Everyone else joins:** they click the link. Their browser shows the party's name and a **Join in Vanilla Agents** button, which
+   hands the link to their own Vanilla Agents (`http://127.0.0.1:8766/join`); its Party window opens by itself and asks
+   "You're invited to ..." with their name filled in: **Join** or **Not now**. Nothing joins without that click.
+   Or, as before: Party window > paste the link > Join. You see each other in "In the party", and each other's helpers walk around in your inn.
 3. **Agree on a plan:** anyone proposes items (what, why, size). Your Claude can propose too (MCP tool `party_propose`).
    Any change asks everyone again. When every active member has pressed "I agree" on the same version, the plan locks.
 4. **Split the work:** the items are shared out by size so everyone gets a similar load. Your items appear in your own quest log as new quests,

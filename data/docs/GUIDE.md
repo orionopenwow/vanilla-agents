@@ -777,6 +777,14 @@ Anyone who has that link can approve work, so only open it on your own phone. Sw
 
 The phone link only works inside your home network, never from the internet.
 
+### Browser access
+
+Options > Browser access lets you see the inn from any browser, anywhere, not only at home. It is off until you switch it on.
+
+Make a pairing link (Watch only, or Watch and approve) and open it in the browser you want to use. It works once.
+
+Connect a Claude makes an address you paste into Claude as a connector, so a Claude on the web joins your inn as a helper.
+
 ### Notifications (Discord, Slack, ntfy)
 
 Options > Notifications sends short messages to Discord, Slack, ntfy or your own webhook when a helper needs you, a quest is ready or done, a check fails, a helper is stunned or the party agrees a plan.

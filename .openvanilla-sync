@@ -1,5 +1,5 @@
 source: vanilla-agents
-commit: fb1cf0c485b1f3f74be7507971bbdc57ec42675c
-subject: Merge feat-t: demo helpers stay at laptops, barmaid, gnome on the table, idle freeze fix
+commit: 15c7112a33bf38f328f967d428560a7ad6298c62
+subject: Browser access: Options page, pairing page, docs, export to Open Vanilla, setup installs cryptography (V-054)
 paths: .
 Made by dev/sync_repos.py. Edit the source, not this copy.

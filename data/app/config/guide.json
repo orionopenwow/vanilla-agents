@@ -864,6 +864,15 @@
      ]
     },
     {
+     "id": "browser",
+     "title": "guide.browser",
+     "body": [
+      "guide.browser_1",
+      "guide.browser_2",
+      "guide.browser_3"
+     ]
+    },
+    {
      "id": "notifications",
      "title": "guide.notifications",
      "body": [

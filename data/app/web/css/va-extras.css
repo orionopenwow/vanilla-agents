@@ -50,3 +50,4 @@
 
 /* Help (F1): Phone link / Notifications buttons */
 .hp-phone { display: flex; gap: 8px; margin: 4px 0 2px; }
+.vas-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }      /* V-054 Browser access rows */

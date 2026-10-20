@@ -383,7 +383,18 @@ def make_handler(party):
             try:
                 if u.path == "/party/state":
                     return self._send(200, party.state(self._key(), (parse_qs(u.query).get("since") or [None])[0]))
-                if u.path == "/party":              # someone opened the invite link in a browser: say what it is
+                if u.path == "/party":              # someone opened the invite link in a browser: a page with one Join button
+                    if "text/html" in (self.headers.get("Accept") or ""):
+                        link = "http://%s%s" % (self.headers.get("Host") or "", self.path)
+                        page = invite_page(party.d["name"], link).encode("utf-8")
+                        self.send_response(200)
+                        self.send_header("Content-Type", "text/html; charset=utf-8")
+                        self.send_header("Content-Length", str(len(page)))
+                        self.send_header("Cache-Control", "no-store")
+                        self.send_header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'")
+                        self.end_headers()
+                        self.wfile.write(page)
+                        return None
                     return self._send(200, {"party": party.d["name"], "hint": "Paste this link into Vanilla Agents: Esc > Party > Join."})
                 return self._send(404, {"error": "no such call"})
             except PermissionError as e:
@@ -436,6 +447,41 @@ def make_handler(party):
             except (ValueError, KeyError, TypeError, OverflowError) as e:
                 return self._send(400, {"error": str(e).strip("'\"")})
     return H
+
+
+APP_PORT = 8766       # the Vanilla Agents window's own server on a friend's PC (app.json "port"); the invite page hands the link to it
+
+
+def invite_page(name, link, app_port=APP_PORT):
+    """The page a friend sees when they click the invite link: Join opens their own Vanilla Agents (127.0.0.1), which asks them to
+    confirm; nothing joins from this page by itself. Plain HTML, no outside files."""
+    from html import escape
+    from urllib.parse import quote
+    go = "http://127.0.0.1:%d/join?invite=%s" % (app_port, quote(link, safe=""))
+    return ("<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
+            "<title>Join %(n)s</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0c0a08;color:#e8dcc0;"
+            "font:16px/1.5 Georgia,serif}.c{max-width:440px;margin:16px;padding:28px;border:1px solid #6b5228;border-radius:8px;background:#1a140d}"
+            "h1{color:#ffd100;font-size:24px;margin:0 0 6px}a.b{display:inline-block;margin:14px 0;padding:10px 22px;border-radius:5px;"
+            "background:linear-gradient(#f5c84c,#c8902a);color:#1a1206;font-weight:bold;text-decoration:none}code{word-break:break-all;"
+            "color:#c9b78f;font-size:13px}small{color:#a99}</style><div class=c><div>You're invited to a Vanilla Agents party</div>"
+            "<h1>%(n)s</h1><a class=b href='%(go)s'>Join in Vanilla Agents</a><p><small>Vanilla Agents must be running on this PC; "
+            "it asks you to confirm before you join. Not working? Copy this link into Vanilla Agents: Esc &gt; Party &gt; Join.</small></p>"
+            "<code>%(l)s</code></div></html>") % {"n": escape(name), "go": escape(go, quote=True), "l": escape(link)}
+
+
+def vpn_addresses():
+    """This PC's Tailscale addresses (100.64.0.0/10), so friends outside your Wi-Fi can use a link that works over the VPN."""
+    import ipaddress
+    import socket
+    out = []
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ip = info[4][0]
+            if ipaddress.ip_address(ip) in ipaddress.ip_network("100.64.0.0/10") and ip not in out:
+                out.append(ip)
+    except (OSError, ValueError):
+        pass
+    return out
 
 
 def serve(party, bind="0.0.0.0", port=8940):

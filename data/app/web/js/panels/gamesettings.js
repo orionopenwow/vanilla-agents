@@ -3,7 +3,7 @@
 // Values are saved in this browser (localStorage); a few are wired to Vanilla Agents itself (sound volume / mute).
 import { clear, el } from '../dom.js';
 import * as ws from '../wsettings.js';
-import { phonePage, notifyPage } from '../vasettings.js';
+import { phonePage, notifyPage, browserPage } from '../vasettings.js';
 import { integrationsPage } from '../integrations.js';
 import { chatRepliesPage } from '../chatreplies.js';
 
@@ -151,6 +151,7 @@ export function build(ctx, panel) {
     { own: true, name: ctx.t('chatreply.title'), group: 'Gameplay', items: [{ kind: 'node', label: ctx.t('chatreply.title'), tip: ctx.t('chatreply.desc'), make: () => chatRepliesPage(ctx) }] },
     { own: true, name: ctx.t('integ.title'), group: 'Gameplay', items: [{ kind: 'node', label: ctx.t('integ.title'), tip: ctx.t('integ.desc'), make: () => integrationsPage(ctx) }] },
     { own: true, name: ctx.t('phonelink.title'), group: 'Gameplay', items: [{ kind: 'node', label: ctx.t('phonelink.title'), tip: ctx.t('phonelink.desc'), make: () => phonePage(ctx) }] },
+    { own: true, name: ctx.t('browserlink.title'), group: 'Gameplay', items: [{ kind: 'node', label: ctx.t('browserlink.title'), tip: ctx.t('browserlink.desc'), make: () => browserPage(ctx) }] },     // V-054
   ];
   const cats = () => [...data.categories.filter((c) => c.items.some((i) => i.label || i.kind === 'button')).map(withQuality), own(), ...vaPages()];
   function render() {

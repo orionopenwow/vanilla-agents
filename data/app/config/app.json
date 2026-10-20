@@ -156,5 +156,12 @@
     "max_zip_bytes": 2097152,
     "max_files": 200,
     "max_unpacked_bytes": 8388608
+  },
+  "remote": {
+    "relay_url": "wss://agents.openvanilla.app/ws",
+    "connector_base": "https://agents.openvanilla.app/mcp/",
+    "page_url": "https://openvanilla.app/agents/live/",
+    "invite_minutes": 10,
+    "event_min_seconds": 0.5
   }
 }

@@ -72,7 +72,14 @@
   "kick": "party.kick",
   "kick_sure": "party.kick_sure",
   "warn_http": "party.warn_http",
-  "local_note": "party.local_note"
+  "local_note": "party.local_note",
+  "invited": "party.invited",
+  "invited_unknown": "party.invited_unknown",
+  "join_as": "party.join_as",
+  "not_now": "party.not_now",
+  "link_lan": "party.link_lan",
+  "link_vpn": "party.link_vpn",
+  "share_hint": "party.share_hint"
  },
  "tips": {
   "host": "party_host",
