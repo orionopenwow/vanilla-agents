@@ -1,7 +1,7 @@
 {
   "name": "vanilla-agents",
   "displayName": "Vanilla Agents",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "description": "Shows your Claude Code sessions as heroes in the Vanilla Agents inn: session hooks for the event feed and the Vanilla Agents tools (quests, progress, requests).",
   "author": {
     "name": "Vanilla Agents"

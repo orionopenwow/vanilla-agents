@@ -1,5 +1,17 @@
 # HANDOFF (current state, newest first)
 
+## 2026-10-20 - speech bubbles over working helpers (V-056)
+- 3D inn: a bubble over each working helper with its quest title (or "Running a command", "Reading the code", ... when it has no quest) and three typing dots that keep going while it works; above the "!" mark when that shows; gone when the helper stops, turns ghost or leaves. Options > Settings > Workshop > Speech bubbles turns them off.
+- Files: app/web/workshop3d/bubble.js (the canvas drawing), inn.js (setBubble per frame, cleanup), wsettings.js VA_Bubbles, gamesettings.js checkbox, strings bubble.* / ws.bubbles*, CHANGE-GUIDE row, DECISION_LOG V-056.
+- Verified: node module checks, config check, full suite (same known failures), the bubble drawing in headless Chromium (one and two lines, long titles cut with an ellipsis, 1/2/3 dots).
+- Not verified: the bubbles in the real 3D inn (size over the heads, readability at distance, many helpers at once).
+
+## 2026-10-20 - cloud Claudes join through va.py (V-055, part 2)
+- Why: a Claude Code session in the cloud (started from the Claude app with this PC linked) never fires this PC's hooks, so Connect Claude Code did not bring it in. New `scripts/va.py` (hello / quest / progress / ready / requests / reply / bye) writes the same feed; it finds the feed in ~/.vanilla-agents or, in a linked session's shell, in the mounted .vanilla-agents folder next to this program's folder; one helper name per shell ("Cloud Claude 1a2b").
+- Connect Claude card: a fourth row "Claude in the cloud, linked to this PC" with "Copy message for Claude" (the exact command with this PC's folder names). docs/INTEGRATION.md section.
+- Verified: tests/test_va_cli.py, test_claude_link (cloud status), and for real from a linked cloud session: va-style events written into the owner's ~/.vanilla-agents/feed.jsonl through the bridge.
+- Not verified: the helper appearing in the owner's open window (needs the owner to look).
+
 ## 2026-10-20 - Connect Claude, and the book icon (V-055)
 - Connect Claude card: Esc > Connect Claude (top of the menu), a button on the first-start welcome card, a button on the empty-inn hint, and it opens by itself once at start when no Claude is connected at all (not in the demo). Three rows with a status dot: Claude Code on this PC (Connect / Reconnect / Start Claude Code here / Disconnect, or Get it when not installed), the Claude desktop app (Connect / Reconnect / Disconnect, or Get it), Claude on the web (status from Browser access, Set up opens that page). Plain status lines: not connected, connected with "N sessions came in, the last 5 min ago", pointing at another copy, sessions without tools.
 - Server: `vanilla_agents/app/claude_link.py` (status from files only; connect through install_hooks / install_mcp, which keep backups), GET/POST /api/claude (POST needs the window key). Strings `claudelink.*`, CHANGE-GUIDE row, schema esc_menu text `claude`.

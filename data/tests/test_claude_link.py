@@ -47,6 +47,8 @@ class ClaudeLinkTests(unittest.TestCase):
         self.assertTrue(s["code"]["installed"])
         self.assertTrue(s["desktop"]["installed"])
         self.assertEqual(s["web"], {"enabled": False, "online": False, "connectors": 0})
+        self.assertEqual(s["cloud"]["home_dir"], os.path.join(self.t, ".vanilla-agents"), "the folder a linked cloud session needs")
+        self.assertTrue(s["cloud"]["folder"])
 
     def test_connect_claude_code_adds_hooks_and_tools(self):
         cl, f = link(self.t)

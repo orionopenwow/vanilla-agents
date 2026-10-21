@@ -28,3 +28,10 @@ project's trusted checks and hidden checks, world map from git, inventory of rep
 Built but switched off: launching helper agents automatically (the durable scheduler/watchdog/recovery engine is tested, nothing
 starts agents), helm/shoulder/weapon models on heroes. Not there yet: per-agent token use for the raid frames' blue bar, a
 scheduled (automatic) Verify after `quest_ready`.
+
+
+## A Claude in the cloud, linked to this PC (V-055)
+A Claude Code session started in the Claude app with this PC linked runs in the cloud. It reaches this PC's shell and connected folders,
+not the hooks, so it does not walk in by itself. Connect Claude (Esc) > "Claude in the cloud" copies a message to paste to it once. It then runs,
+through the PC's shell, `python3 $HOME/mnt/<this folder>/data/scripts/va.py hello "what I am doing"` (also `quest`, `progress`, `ready`,
+`requests`, `reply`, `bye`). The session needs two folders connected: this program's folder and `C:\Users\<you>\.vanilla-agents` (where the feed is).

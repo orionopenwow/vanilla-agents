@@ -95,6 +95,14 @@ export function openClaudeLink(ctx) {
       else if (w.enabled && !w.online) body.append(row(T('web'), T('web_what'), T('web_offline'), 'warn', [setup]));
       else body.append(row(T('web'), T('web_what'), T('web_off'), false, [setup]));
     }
+    if (st) {      // a cloud session linked to this PC: a message to paste to it (it joins through the PC's shell with scripts/va.py)
+      const text = T('cloud_prompt', { name: st.cloud.folder, path: st.cloud.home_dir });
+      const copy = btn(T('cloud_copy'), 'btn-blue', async () => {
+        try { await navigator.clipboard.writeText(text); msg = T('cloud_copied'); bad = false; } catch (e) { msg = text; bad = false; }
+        render();
+      }, 'cloud');
+      body.append(row(T('cloud'), T('cloud_what'), '', null, [copy]));
+    }
     if (msg) body.append(el('div', 'vas-p ' + (bad ? 'red' : 'green'), msg));
     const foot = el('div', 'welcome-row');
     const done = el('button', 'btn btn-grey', T('close'), { type: 'button' });

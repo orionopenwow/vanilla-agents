@@ -996,6 +996,14 @@
      "setting": "VA_MaxHelpers"
     },
     {
+     "id": "set_bubbles",
+     "title": "guide.set_bubbles",
+     "body": [
+      "guide.set_bubbles_1"
+     ],
+     "setting": "VA_Bubbles"
+    },
+    {
      "id": "set_motion",
      "title": "guide.set_motion",
      "body": [

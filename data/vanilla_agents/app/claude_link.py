@@ -6,6 +6,8 @@ Three ways in:
   in the open project, so the owner can see a helper walk in.
 - The Claude desktop app: the Vanilla Agents tools in claude_desktop_config.json (needs a restart of the app).
 - Claude on the web (claude.ai): a connector address from Options > Browser access (remote_api), shown here as a status line.
+- A Claude Code session in the cloud linked to this PC (started from the Claude app): it runs commands through this PC's shell, so the hooks
+  never see it; the card gives a message to paste to it, and it joins with scripts/va.py (hello / quest / progress / bye).
 
 Owner's clicks only (POST /api/claude with the window key); never an agent or MCP tool. Every edit goes through the installers, which keep a
 timestamped backup and leave everything else in those files untouched. Status reads files only (no `claude` process is started for it)."""
@@ -82,6 +84,9 @@ class ClaudeLink:
                      "sessions": sessions, "last_seen": seen},
             "desktop": {"installed": desktop_dir, "tools": self._server_state(_load(self.desktop))},
             "web": {"enabled": bool(r.get("enabled")), "online": bool(r.get("online")), "connectors": len(r.get("connectors") or [])},
+            # a Claude Code session in the cloud, linked to this PC from the Claude app: it reaches this PC's shell and folders, not its hooks;
+            # it joins with scripts/va.py through that shell once this program's folder and the .vanilla-agents folder are connected to it
+            "cloud": {"folder": os.path.basename(os.path.dirname(self.hooks_mod.ROOT)), "home_dir": str(self.home / ".vanilla-agents")},
         }
 
     # ---- connect ----

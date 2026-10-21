@@ -693,6 +693,11 @@
     "body": "How many helpers walk around in the inn. Everyone still shows in the raid frames.",
     "use": "Lower it when the inn is crowded or slow."
   },
+  "setting_VA_Bubbles": {
+    "title": "Speech bubbles",
+    "body": "A bubble over each working helper in the inn: its quest, or what it is doing, with three dots that keep going while it works.",
+    "use": "Turn it off for a calmer inn, or when many helpers crowd the screen."
+  },
   "setting_VA_ReducedMotion": {
     "title": "Reduce motion",
     "body": "Stops emotes, sparks, camera sway, errands and the pulsing raid frame. Starts out like your system setting.",

@@ -11,6 +11,7 @@ export const DEFAULTS = {
   VA_MaxHelpers: 15,            // people drawn in the workshop (the rest still show in the raid frames)
   VA_ReducedMotion: false,      // no emotes, no camera sway, no sparks
   VA_Music: true,               // the building's own music on the jukebox (off: every baked track)
+  VA_Bubbles: true,             // V-056: speech bubbles over working helpers (their quest, and "..." while they work)
 };
 
 const listeners = new Set();

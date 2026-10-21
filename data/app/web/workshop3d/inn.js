@@ -9,6 +9,7 @@ import { TUNE } from './tune.js';
 import { makeJukebox } from './jukebox.js';
 import { makeJukeAudio } from './jukeaudio.js';
 import { showToast } from '../js/toast.js';
+import { drawBubble } from './bubble.js';
 import { makeTyping } from './typing.js';
 import { makeMonitor } from './monitor.js';
 import * as ws from '../js/wsettings.js';
@@ -515,7 +516,7 @@ export function initInn(ctx) {
         }).catch((e) => console.warn('inn person', e));
       }
     }
-    for (const [id, v] of villagers) if (!ids.has(id)) { if (v.mark) scene.remove(v.mark); putSack(v); leaveSeat(v); if (v.station || v.st) fromStation(v); if (v.p) scene.remove(v.p.g); villagers.delete(id); }
+    for (const [id, v] of villagers) if (!ids.has(id)) { if (v.mark) scene.remove(v.mark); if (v.bubble) { scene.remove(v.bubble.sp); v.bubble.tx.dispose(); v.bubble.sp.material.dispose(); } putSack(v); leaveSeat(v); if (v.station || v.st) fromStation(v); if (v.p) scene.remove(v.p.g); villagers.delete(id); }
   }
   const doorSpot = () => {        // a few metres from you, never on top of you (ponytail: the real door is not located yet)
     for (let k = 0; k < 12; k++) { const a = R() * 6.283, d = 2.5 + R() * 3.5, i = nearestFree(hero.x + Math.sin(a) * d, hero.z + Math.cos(a) * d, hero.y, 4); if (i >= 0) { const [x, z] = cellXZ(i); if (Math.hypot(x - hero.x, z - hero.z) > 1.8) return { x, z, y: nav.y[i] }; } }
@@ -726,6 +727,33 @@ export function initInn(ctx) {
     const head = v.p.g.getWorldPosition(tmp); v.mark.position.set(head.x, head.y + 2.35 + Math.sin(t * 3) * 0.06, head.z); v.mark.visible = true;
   }
 
+  // V-056: a speech bubble over a working helper: its quest (or, without one, what it is doing in plain words) and a "..." that keeps going
+  // while it works. Drawn on a canvas only when the text or the dot count changes; sits above the "!" mark when that shows.
+  const BUBBLE_KINDS = [[/^using Bash\b/i, 'bubble.command'], [/^using (Read|Grep|Glob|LS|NotebookRead)\b/i, 'bubble.reading'], [/^using (Edit|Write|MultiEdit|NotebookEdit)\b/i, 'bubble.writing'],
+    [/^using (WebSearch|WebFetch)\b/i, 'bubble.looking'], [/^using (Task|Agent)\b/i, 'bubble.helpers'], [/^using /i, 'bubble.working']];
+  function bubbleText(a) {
+    const q = a.task && (state.tasks || []).find((x) => x.id === a.task);
+    if (q && q.title) return q.title;
+    const act = String(a.activity || '').trim();
+    if (!act) return ctx.t('bubble.thinking');
+    for (const [re, key] of BUBBLE_KINDS) if (re.test(act)) return ctx.t(key);
+    return act;
+  }
+  function setBubble(v, a, t, marked) {
+    if (!v.p) return;
+    const show = !!a && atWork(a) && !v.ghost && !(state.demo && barmaid(a.id)) && ws.get('VA_Bubbles') !== false;
+    if (!show) { if (v.bubble) v.bubble.sp.visible = false; return; }
+    if (!v.bubble) {
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 192;
+      const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, depthTest: false, transparent: true })); sp.scale.set(2.4, 0.9, 1); sp.renderOrder = 9; scene.add(sp);
+      v.bubble = { cv, g: cv.getContext('2d'), tx, sp, text: '', dots: -1 };
+    }
+    const b = v.bubble, text = bubbleText(a), dots = ws.reducedMotion() ? 3 : 1 + (Math.floor(t * 2.5) % 3);
+    if (text !== b.text || dots !== b.dots) { b.text = text; b.dots = dots; drawBubble(b, text, dots); }
+    const head = v.p.g.getWorldPosition(tmp); b.sp.position.set(head.x, head.y + (marked ? 3.15 : 2.65), head.z); b.sp.visible = true;
+  }
+
   function stepVillager(v, a, dt, t) {
     const p = v.p; if (!p || !ready) return;
     // V-028: "Follow me" (talk window): an idle helper walks after you until you say stop or it gets work
@@ -738,7 +766,9 @@ export function initInn(ctx) {
     noteTask(v, a, t);
     const cq = (a && !a.remote && a.contest) || null;          // V-047: competing on a quest (snapshot agent.contest)
     if (cq !== (v.contestQ || null)) { const was = v.contestQ; v.contestQ = cq; if (was) contestOver(v, was); }
-    setMark(v, a && a.needs ? 'needs' : a && a.stunned ? 'stunned' : null, t);
+    const mk = a && a.needs ? 'needs' : a && a.stunned ? 'stunned' : null;
+    setMark(v, mk, t);
+    setBubble(v, a, t, !!mk);
     if (a && a.stunned && v.stage !== 'work' && p.cur !== 'stun' && v.stage !== 'go' && v.stage !== 'togo') { p.cur = null; p.after = null; play(p, 'stun'); }
     const working = atWork(a);
     if (a) setGhost(v, !working && !v.checking && !!a.seen && (Date.now() / 1000 - (typeof a.seen === 'number' ? a.seen : Date.parse(a.seen) / 1000)) > GHOST_S);

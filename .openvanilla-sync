@@ -1,5 +1,5 @@
 source: vanilla-agents
-commit: 5aabfb133001f09e2c1e67bb6397c9e1d99b59ab
-subject: Connect Claude: one window that connects Claude Code, the desktop app and claude.ai, and starts a session (V-055)
+commit: 577e394265f4e491fdd1f5bc2165c3330ea120ea
+subject: Speech bubbles over working helpers: their quest and typing dots (V-056)
 paths: .
 Made by dev/sync_repos.py. Edit the source, not this copy.

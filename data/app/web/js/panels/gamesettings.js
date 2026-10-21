@@ -129,6 +129,7 @@ export function build(ctx, panel) {
     { kind: 'dropdown', var: 'VA_Quality', label: T('quality'), tip: T('quality_tip'), default: 2, options: [0, 1, 2, 3].map((v) => ({ value: v, label: T('quality_' + v) })) },
     { kind: 'dropdown', var: 'VA_FpsCap', label: T('fps'), tip: T('fps_tip'), default: 60, options: [30, 60, 0].map((v) => ({ value: v, label: v ? String(v) : T('fps_none') })) },
     { kind: 'slider', var: 'VA_MaxHelpers', label: T('helpers'), tip: T('helpers_tip'), min: 1, max: 15, step: 1, default: 15 },
+    { kind: 'checkbox', var: 'VA_Bubbles', label: T('bubbles'), tip: T('bubbles_tip'), default: true },
     { kind: 'checkbox', var: 'VA_ReducedMotion', label: T('motion'), tip: T('motion_tip'), default: ws.reducedMotion() },
   ];
   // Graphics > "Graphics Quality": the CVars the game's graphics page lists (mainline/graphicsoverrides.lua); choices are the game's quality names

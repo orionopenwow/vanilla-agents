@@ -893,6 +893,12 @@ Lower it when the inn gets crowded or slow.
 
 *Show in Options: Helpers in the building*
 
+### Speech bubbles
+
+Each working helper has a bubble over its head with its quest (or what it is doing) and three dots that keep going while it works. Switch them off in Options > Settings > Workshop.
+
+*Show in Options: Speech bubbles*
+
 ### Reduce motion
 
 Stops emotes, sparks, camera sway, errands and the pulsing raid frame. It starts out the same as your system's reduce motion setting.
