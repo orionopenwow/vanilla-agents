@@ -50,6 +50,6 @@ MIT: see [LICENSE](LICENSE).
 
 ## About this repository
 
-This repository is published from **vanilla-agents** (commit `15c7112a33`: Browser access: Options page, pairing page, docs, export to Open Vanilla, setup installs cryptography (V-054)). Changes are made there and arrive here with each release, so please open issues and pull requests on [Open Vanilla](https://github.com/orionopenwow/OpenVanilla/issues).
+This repository is published from **vanilla-agents** (commit `5aabfb1330`: Connect Claude: one window that connects Claude Code, the desktop app and claude.ai, and starts a session (V-055)). Changes are made there and arrive here with each release, so please open issues and pull requests on [Open Vanilla](https://github.com/orionopenwow/OpenVanilla/issues).
 
 World of Warcraft is a trademark of Blizzard Entertainment, Inc. Open Vanilla is an independent fan project, not affiliated with or endorsed by Blizzard Entertainment. No Blizzard game files are included: you need your own.

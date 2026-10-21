@@ -17,7 +17,8 @@ Everything you see comes from **your own** WoW 1.12 `Data` folder (`patch.MPQ`, 
 2. Drag your WoW `Data` folder onto `setup.cmd` (or run `setup.cmd "C:\path\to\Data"`). It bakes the art (~1 minute),
    connects Claude (Claude Code hooks, plus Vanilla Agents tools for Claude Code and the desktop app; backups are kept)
    and puts a shortcut on the Desktop.
-3. Double-click **Vanilla Agents** on the Desktop. Start any Claude Code session: it shows up in the inn.
+3. Double-click **Vanilla Agents** on the Desktop. If Claude is not connected yet, the **Connect Claude** window opens (also Esc > Connect Claude):
+   one click per Claude you use (Claude Code, the Claude desktop app, claude.ai). Start any Claude Code session: it shows up in the inn.
 
 Just looking? `demo.cmd` plays six pretend helpers, no agents needed.
 

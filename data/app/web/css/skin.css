@@ -248,4 +248,18 @@
 @media (prefers-reduced-motion: reduce) { .raid-needs { animation: none; box-shadow: 0 0 8px 2px rgba(255, 209, 0, 0.7); } }
 .empty-hint { position: fixed; left: 50%; top: 38%; transform: translateX(-50%); max-width: 520px; padding: 12px 20px; text-align: center; color: #fff; font-size: 15px; background: rgba(0, 0, 0, 0.6); border: 1px solid #6d5426; border-radius: 6px; pointer-events: none; z-index: 0; text-shadow: var(--text-dark); }
 .empty-hint[hidden] { display: none; }
+.empty-hint .empty-hint-btn { pointer-events: auto; margin-top: 10px; }
+/* V-055 Connect Claude card */
+.claudelink { width: min(560px, 94vw); max-height: 90vh; overflow: auto; outline: none; }
+.claudelink .claudelink-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #3a2f20; }
+.claudelink .claudelink-dot { width: 10px; height: 10px; border-radius: 50%; background: #555; box-shadow: 0 0 0 2px #000; }
+.claudelink .claudelink-dot.on { background: #1eff00; box-shadow: 0 0 6px #1eff00; }
+.claudelink .claudelink-dot.warn { background: #ffb000; }
+.claudelink .claudelink-text { display: flex; flex-direction: column; gap: 2px; }
+.claudelink .claudelink-btns { display: flex; flex-direction: column; gap: 6px; align-items: stretch; min-width: 150px; }
+.claudelink .claudelink-small { font-size: 11px; height: 22px; opacity: 0.8; }
+.claudelink a.claudelink-a { text-decoration: none; text-align: center; }
+.claudelink .welcome-row { align-items: center; margin-top: 12px; }
+.claudelink .claudelink-help { flex: 1; }
+.esc .esc-claude { color: #8fd3ff; }
 .raid-clash .raid-name::after { content: ' ⚠'; color: #ff8a3a; }

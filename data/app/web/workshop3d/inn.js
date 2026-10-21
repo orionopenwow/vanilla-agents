@@ -1155,7 +1155,10 @@ export function initInn(ctx) {
     loading.step('Lighting the candles', 0.94, 0.99);
     placeCamera(0); renderer.compile(scene, camera); renderer.render(scene, camera);      // shaders and textures go to the GPU now, not mid-game
     // nobody here yet: say how to bring helpers in (gone as soon as one walks in)
-    const hint = document.createElement('div'); hint.className = 'empty-hint'; hint.textContent = ctx.t('ws.empty_inn'); hint.hidden = true; document.body.append(hint);
+    const hint = document.createElement('div'); hint.className = 'empty-hint'; hint.textContent = ctx.t('ws.empty_inn'); hint.hidden = true;
+    { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-blue empty-hint-btn'; b.textContent = ctx.t('claudelink.empty_button');      // V-055
+      b.addEventListener('click', () => import('../js/claudelink.js').then((m) => m.openClaudeLink(ctx))); hint.append(document.createElement('br'), b); }
+    document.body.append(hint);
     setInterval(() => { hint.hidden = agentsNow().length > 0 || !!(state.party && state.party.joined && state.party.state && state.party.state.members.length > 1); }, 1000);
     ready = true; loading.done();
     let tour = null; try { tour = JSON.parse(sessionStorage.getItem('vanilla.photoTour') || 'null'); } catch (e) { tour = null; }

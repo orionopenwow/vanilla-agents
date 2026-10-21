@@ -1,5 +1,6 @@
-// Esc menu: Options, Zones, Guide (V-037), AddOns (V-051), Log Out = Choose Project (project picker), Exit Game, Return to Game. Starts hidden.
+// Esc menu: Connect Claude (V-055), Options, Zones, Guide (V-037), AddOns (V-051), Log Out = Choose Project (project picker), Exit Game, Return to Game. Starts hidden.
 import { clear, el } from '../dom.js';
+import { openClaudeLink } from '../claudelink.js';
 
 export function build(ctx, panel) {
   const c = panel.cfg;
@@ -18,7 +19,8 @@ export function build(ctx, panel) {
   const guide = () => { const b = button(t('guide'), () => { panel.toggle(); ctx.panels.guide.api.open(); }); b.dataset.tip = c.tips.guide; return b; };   // V-037
   function menu() {   // the game's Game Menu: Options / Support, Macros / Log Out, Exit Game / Return to Game
     clear(view);
-    view.append(button(t('options'), () => { panel.toggle(); ctx.panels.game_settings.api.show(); ctx.panels.game_settings.toggle(); }),
+    const claude = button(t('claude'), () => { panel.toggle(); openClaudeLink(ctx); }); claude.classList.add('esc-claude');      // V-055
+    view.append(claude, gap(), button(t('options'), () => { panel.toggle(); ctx.panels.game_settings.api.show(); ctx.panels.game_settings.toggle(); }),
       button(t('zones'), () => { panel.toggle(); ctx.panels.zones.toggle(); }), guide(), button(t('addons'), () => { panel.toggle(); if (!ctx.panels.addons.isOpen()) ctx.panels.addons.toggle(); }), gap(),
       off(t('support')), off(t('macros')), gap(),
       button(t('logout'), picker), button(t('quit'), () => { window.close(); note.hidden = false; }), gap(),

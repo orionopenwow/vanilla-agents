@@ -27,7 +27,7 @@ from .state import AppState
 
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
          ".png": "image/png", ".ttf": "font/ttf", ".ogg": "audio/ogg", ".wav": "audio/wav", ".mp3": "audio/mpeg", ".glb": "model/gltf-binary", ".json": "application/json", ".woff2": "font/woff2", ".jpg": "image/jpeg"}
-WEB_EXT, ASSET_EXT = (".html", ".js", ".css", ".woff2"), (".png", ".jpg", ".ttf", ".ogg", ".wav", ".mp3", ".glb", ".json")
+WEB_EXT, ASSET_EXT = (".html", ".js", ".css", ".woff2", ".png"), (".png", ".jpg", ".ttf", ".ogg", ".wav", ".mp3", ".glb", ".json")
 MAX_BODY = 4096
 KEY_HEADER = "X-Vanilla-Key"
 
@@ -66,6 +66,8 @@ class Ctx:
         self.integ = integrations_api.make_hub(self)       # V-044: imported bounties and the CI line (threads only via start_integrations)
         self.chat = chatreplies.make(self, os.environ)      # V-050: commands from Discord / Slack / ntfy (thread only via start_chat)
         self.remote = remote_api.RemoteCtl(self, os.environ)       # V-054: browser access (the bridge thread only via remote.start, once the port is known)
+        from .claude_link import ClaudeLink
+        self.claude = ClaudeLink()       # V-055: Connect Claude (tests swap in one with a temp home)
         self._watch_stop = None
         self.watching = watch       # False for the phone script (scripts/decide.py): no transcript watcher, nothing added to the feed but the decision
         if watch:
@@ -342,6 +344,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, ctx.phone_status())
         if path == "/api/remote":        # V-054: browser access status, paired browsers, connectors (no keys, tokens or links)
             return self._send(200, ctx.remote.status())
+        if path == "/api/claude":        # V-055: which Claudes reach the inn (Claude Code hooks and tools, the desktop app, claude.ai connectors)
+            ctx.state.refresh()
+            return self._send(200, ctx.claude.status(ctx.snap(), ctx.remote.status()))
         if path == "/api/notify":        # V-041: notification settings (from your settings file)
             return self._send(200, notify.view(notify.load(ctx.settings_file)))
         if path in chatreplies.GET_CALLS:        # V-050: chat replies settings WITHOUT secrets, and status lines
@@ -380,7 +385,7 @@ class Handler(BaseHTTPRequestHandler):
         ctype = self.headers.get("Content-Type", "").split(";")[0].strip().lower()      # the main type exactly, not 'text/plain; x=application/json'
         allowed = PHONE_CALLS if getattr(self.server, "phone_ip", None) else ("/api/project", "/api/settings", "/api/verify", "/api/pause", "/api/approve", "/api/quest", "/api/onboard",
                    "/api/idea/draft", "/api/idea/approve", "/api/whisper", "/api/hearth", "/api/quest_new", "/api/party", "/api/log", "/api/diagnostics",
-                   "/api/resurrect", "/api/phone", "/api/remote", "/api/notify", "/api/notify/test", "/api/inn_photo", "/api/contest") + integrations_api.POST_CALLS + chatreplies.POST_CALLS + addons_api.POST_CALLS
+                   "/api/resurrect", "/api/phone", "/api/remote", "/api/claude", "/api/notify", "/api/notify/test", "/api/inn_photo", "/api/contest") + integrations_api.POST_CALLS + chatreplies.POST_CALLS + addons_api.POST_CALLS
         if call not in allowed or ctype != "application/json":
             return self._send(404, {"error": "no such call"})
         if not self._key_ok():      # D-381: every state-changing call carries the per-launch key
@@ -466,6 +471,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, ctx.phone_status())
             if call == "/api/remote":        # V-054: browser access on/off, pairing link, remove a browser, Claude connector addresses
                 return self._send(200, ctx.remote.action(body))
+            if call == "/api/claude":        # V-055: the owner's click: connect Claude Code / the desktop app, or open a terminal running claude
+                out = ctx.claude.action(body, ctx.state.project)
+                ctx.state.refresh()
+                return self._send(200, dict(out, status=ctx.claude.status(ctx.snap(), ctx.remote.status())))
             if call == "/api/notify":        # V-041: save notification settings
                 notify.save(ctx.settings_file, body.get("channels"))
                 return self._send(200, notify.view(notify.load(ctx.settings_file)))

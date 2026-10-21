@@ -7,7 +7,7 @@
  },
  "size": {
   "w": 320,
-  "h": 400
+  "h": 430
  },
  "visible": false,
  "hotkey": "esc_menu",
@@ -37,7 +37,8 @@
   "unavailable": "esc.unavailable",
   "guide": "guide.ui_menu",
   "zones": "esc.zones",
-  "addons": "esc.addons"
+  "addons": "esc.addons",
+  "claude": "claudelink.esc"
  },
  "tips": {
   "project_add": "esc_project_add",

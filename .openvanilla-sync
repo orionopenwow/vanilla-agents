@@ -1,5 +1,5 @@
 source: vanilla-agents
-commit: 15c7112a33bf38f328f967d428560a7ad6298c62
-subject: Browser access: Options page, pairing page, docs, export to Open Vanilla, setup installs cryptography (V-054)
+commit: 5aabfb133001f09e2c1e67bb6397c9e1d99b59ab
+subject: Connect Claude: one window that connects Claude Code, the desktop app and claude.ai, and starts a session (V-055)
 paths: .
 Made by dev/sync_repos.py. Edit the source, not this copy.

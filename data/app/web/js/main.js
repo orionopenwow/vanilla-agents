@@ -5,6 +5,7 @@ import { createPanel } from './panel.js';
 import { initTooltips } from './tooltip.js';
 import { initHotkeys } from './hotkeys.js';
 import { connect } from './net.js';
+import { openClaudeLink, nothingConnected } from './claudelink.js';
 import { toastForEvents } from './toast.js';
 import { initSound } from './sound.js';
 import { build as soundMenu } from './panels/soundmenu.js';
@@ -100,24 +101,33 @@ async function boot() {
   reportErrors(ctx);
   if ((cfg.rebake || []).length) setTimeout(() => import('./toast.js').then((t) => t.showToast(ctx.t('ws.rebake', { text: cfg.rebake.join(' ') }), 'red', 9000)), 2500);   // V-029: short banner; Help (F1) shows the command
   loadAddons(ctx);
-  loading.onDone(() => welcome(ctx));
+  loading.onDone(() => { if (!welcome(ctx)) claudeOnce(ctx); });
   if (mode !== 'inn') loading.done();      // the inn closes the loading screen itself once everything is built
 }
 
 // V-053: the first time the window opens, a short card says what this is and the three things to know; never again after "Let's go"
 function welcome(ctx) {
-  try { if (localStorage.getItem('va.welcomed')) return; } catch (e) { return; }      // storage off: no card rather than one every start
+  try { if (localStorage.getItem('va.welcomed')) return false; } catch (e) { return false; }      // storage off: no card rather than one every start
   const card = document.createElement('div'); card.className = 'welcome'; card.setAttribute('role', 'dialog'); card.setAttribute('aria-label', ctx.t('welcome.title'));
   const h = document.createElement('h2'); h.textContent = ctx.t('welcome.title');
   const ul = document.createElement('ul');
-  for (const k of ['welcome.helpers', 'welcome.move', 'welcome.quests', 'welcome.party']) { const li = document.createElement('li'); li.textContent = ctx.t(k); ul.append(li); }
+  for (const k of ['claudelink.welcome_line', 'welcome.helpers', 'welcome.move', 'welcome.quests', 'welcome.party']) { const li = document.createElement('li'); li.textContent = ctx.t(k); ul.append(li); }
   const row = document.createElement('div'); row.className = 'welcome-row';
   const close = () => { try { localStorage.setItem('va.welcomed', '1'); } catch (e) { /* storage off */ } card.remove(); };
   const guide = document.createElement('button'); guide.type = 'button'; guide.className = 'btn btn-grey'; guide.textContent = ctx.t('welcome.guide');
   guide.addEventListener('click', () => { close(); const g = ctx.panels.guide; if (g && !g.isOpen()) g.toggle(); });
   const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'btn btn-green'; ok.textContent = ctx.t('welcome.ok');
-  ok.addEventListener('click', close);
-  row.append(guide, ok); card.append(h, ul, row); document.body.append(card); ok.focus();
+  ok.addEventListener('click', () => { close(); claudeOnce(ctx); });
+  const claude = document.createElement('button'); claude.type = 'button'; claude.className = 'btn btn-blue'; claude.textContent = ctx.t('claudelink.title');      // V-055
+  claude.addEventListener('click', () => { close(); openClaudeLink(ctx); });
+  row.append(guide, claude, ok); card.append(h, ul, row); document.body.append(card); claude.focus();
+  return true;
+}
+
+// V-055: no Claude connected at all: open Connect Claude by itself, once per start (the demo has pretend helpers, so not there)
+async function claudeOnce(ctx) {
+  if (ctx.last && ctx.last.demo) return;
+  if (await nothingConnected(ctx)) openClaudeLink(ctx);
 }
 
 // V-026: helpers that need you show in the window title (taskbar) and, when the window is in the background, as a desktop notification

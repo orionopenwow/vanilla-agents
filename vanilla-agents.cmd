@@ -8,5 +8,6 @@ where python >nul 2>nul || (
   exit /b 1
 )
 python scripts\reconnect.py
+python scripts\make_icon.py >nul 2>nul
 python -m vanilla_agents.app.server --open %*
 if errorlevel 1 pause
